@@ -19,6 +19,8 @@ package com.android.launcher3;
 import static com.android.launcher3.config.FeatureFlags.ENABLE_CURSOR_HOVER_STATES;
 import static com.android.launcher3.InvariantDeviceProfile.KEY_SHOW_DESKTOP_LABELS;
 import static com.android.launcher3.InvariantDeviceProfile.KEY_SHOW_DRAWER_LABELS;
+import static com.android.launcher3.InvariantDeviceProfile.KEY_MAX_LINES;
+import static com.android.launcher3.InvariantDeviceProfile.KEY_ALLAPPS_THEMED_ICONS;
 import static com.android.launcher3.config.FeatureFlags.ENABLE_DOWNLOAD_APP_UX_V2;
 import static com.android.launcher3.config.FeatureFlags.ENABLE_ICON_LABEL_AUTO_SCALING;
 import static com.android.launcher3.graphics.PreloadIconDrawable.newPendingIcon;
@@ -64,6 +66,7 @@ import com.android.launcher3.dot.DotInfo;
 import com.android.launcher3.dragndrop.DragOptions.PreDragCondition;
 import com.android.launcher3.dragndrop.DraggableView;
 import com.android.launcher3.folder.FolderIcon;
+import com.android.launcher3.graphics.DrawableFactory;
 import com.android.launcher3.graphics.IconShape;
 import com.android.launcher3.graphics.PreloadIconDrawable;
 import com.android.launcher3.icons.DotRenderer;
@@ -188,6 +191,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
     private boolean mDisableRelayout = false;
 
     private boolean mShouldShowLabel;
+    private boolean mThemeAllAppsIcons;
+    private int mMaxLines;
 
     private HandlerRunnable mIconLoadRequest;
 
@@ -222,12 +227,14 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             setCompoundDrawablePadding(grid.iconDrawablePaddingPx);
             defaultIconSize = grid.iconSizePx;
             setCenterVertically(grid.iconCenterVertically);
+            mShouldShowLabel = prefs.getBoolean(KEY_SHOW_DESKTOP_LABELS, true);
         } else if (mDisplay == DISPLAY_ALL_APPS || mDisplay == DISPLAY_PREDICTION_ROW
                 || mDisplay == DISPLAY_SEARCH_RESULT_APP_ROW) {
             setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.allAppsIconTextSizePx);
             setCompoundDrawablePadding(grid.allAppsIconDrawablePaddingPx);
             defaultIconSize = grid.allAppsIconSizePx;
             mShouldShowLabel = prefs.getBoolean(KEY_SHOW_DRAWER_LABELS, true);
+            mThemeAllAppsIcons = prefs.getBoolean(KEY_ALLAPPS_THEMED_ICONS, false);
         } else if (mDisplay == DISPLAY_FOLDER) {
             setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.folderChildTextSizePx);
             setCompoundDrawablePadding(grid.folderChildDrawablePaddingPx);
@@ -248,6 +255,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             defaultIconSize = grid.iconSizePx;
             mShouldShowLabel = prefs.getBoolean(KEY_SHOW_DESKTOP_LABELS, true);
         }
+        mMaxLines = prefs.getInt(KEY_MAX_LINES, 1);
 
         mCenterVertically = a.getBoolean(R.styleable.BubbleTextView_centerVertically, false);
 
@@ -286,7 +294,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
         mDotParams.scale = 0f;
         mForceHideDot = false;
         setBackground(null);
-        if (FeatureFlags.ENABLE_TWOLINE_ALLAPPS.get()
+        if (mMaxLines > 1 || FeatureFlags.ENABLE_TWOLINE_ALLAPPS.get()
                 || FeatureFlags.ENABLE_TWOLINE_DEVICESEARCH.get()) {
             setMaxLines(1);
         }
@@ -412,16 +420,16 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     protected boolean shouldUseTheme() {
         return mDisplay == DISPLAY_WORKSPACE || mDisplay == DISPLAY_FOLDER
-                || mDisplay == DISPLAY_TASKBAR;
+                || mDisplay == DISPLAY_TASKBAR || (mThemeAllAppsIcons && mDisplay == DISPLAY_ALL_APPS);
     }
 
     /**
      *  Only if actual text can be displayed in two line, the {@code true} value will be effective.
      */
     protected boolean shouldUseTwoLine() {
-        return  (FeatureFlags.ENABLE_TWOLINE_ALLAPPS.get() && mDisplay == DISPLAY_ALL_APPS)
+        return mMaxLines > 1 || ((FeatureFlags.ENABLE_TWOLINE_ALLAPPS.get() && mDisplay == DISPLAY_ALL_APPS)
                 || (FeatureFlags.ENABLE_TWOLINE_DEVICESEARCH.get()
-                && mDisplay == DISPLAY_SEARCH_RESULT);
+                && mDisplay == DISPLAY_SEARCH_RESULT));
     }
 
     @UiThread
@@ -434,6 +442,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
             mBreakPointsIntArray = StringMatcherUtility.getListOfBreakpoints(label, MATCHER);
             if (mShouldShowLabel) {
                 setText(label);
+                setMaxLines(mMaxLines);
             }
         }
         if (info.contentDescription != null) {
@@ -725,7 +734,7 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 // if text contains NEW_LINE, set max lines to 2
                 if (TextUtils.indexOf(modifiedString, NEW_LINE) != -1) {
                     setSingleLine(false);
-                    setMaxLines(2);
+                    setMaxLines(mMaxLines);
                 } else {
                     setSingleLine(true);
                     setMaxLines(1);
@@ -755,6 +764,10 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
     public boolean shouldShowLabel() {
         return mShouldShowLabel;
+    }
+
+    public int getMaxLines() {
+        return mMaxLines;
     }
 
     public boolean shouldTextBeVisible() {
@@ -943,8 +956,8 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
 
         ItemInfoWithIcon info = (ItemInfoWithIcon) getTag();
         int progressLevel = info.getProgressLevel();
-        final PreloadIconDrawable preloadDrawable = newPendingIcon(getContext(), info);
-
+        final PreloadIconDrawable preloadDrawable = DrawableFactory.INSTANCE.get(getContext())
+                                                           .newPendingIcon(getContext(), info);
         preloadDrawable.setLevel(progressLevel);
         preloadDrawable.setIsDisabled(ENABLE_DOWNLOAD_APP_UX_V2.get()
                 ? info.getProgressLevel() == 0
