@@ -183,6 +183,7 @@ public final class Utilities {
     public static final String KEY_SINGLE_PAGE_CENTER = "pref_single_page_center";
     public static final String KEY_DRAWER_SEARCH = "pref_drawer_search";
     public static final String KEY_TRANSIENT_TASKBAR = "pref_transient_taskbar";
+    public static final String KEY_VIBRATION_TOGGLE = "pref_recents_vibration";
 
     /**
      * Returns true if theme is dark.
@@ -956,4 +957,9 @@ public final class Utilities {
         SharedPreferences prefs = LauncherPrefs.getPrefs(context.getApplicationContext());
         return prefs.getBoolean(KEY_TRANSIENT_TASKBAR, false);
     }
+
+    public static boolean recentsScrollVibration(Context context) {
+    	SharedPreferences prefs = LauncherPrefs.getPrefs(context.getApplicationContext());
+    	return prefs.getBoolean(KEY_VIBRATION_TOGGLE, true);
+   }
 }
