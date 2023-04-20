@@ -538,6 +538,7 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
     private long mScrollLastHapticTimestamp;
 
     private float mScrollScale = 1f;
+    private boolean mIsLandScape;
 
     /**
      * TODO: Call reloadIdNeeded in onTaskStackChanged.
@@ -2033,6 +2034,8 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
                 || mOrientationState.getRecentsActivityRotation() != ROTATION_0;
         mActionsView.updateHiddenFlags(HIDDEN_NON_ZERO_ROTATION,
                 !mOrientationState.isRecentsActivityRotationAllowed() && isInLandscape);
+                
+	mIsLandScape = isInLandscape;
 
         // Update TaskView's DeviceProfile dependent layout.
         updateChildTaskOrientations();
@@ -2043,6 +2046,10 @@ public abstract class RecentsView<ACTIVITY_TYPE extends StatefulActivity<STATE_T
         requestLayout();
         // Reapply the current page to update page scrolls.
         setCurrentPage(mCurrentPage);
+    }
+
+    public boolean getLandScape() {
+        return mIsLandScape;
     }
 
     private void onOrientationChanged() {
