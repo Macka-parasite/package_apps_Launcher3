@@ -160,7 +160,7 @@ public class DisplayController implements ComponentCallbacks, SafeCloseable {
         return getInfo().navigationMode == NavigationMode.NO_BUTTON
                 && (Utilities.isRunningInTestHarness()
                     ? sTransientTaskbarStatusForTests
-                    : ENABLE_TRANSIENT_TASKBAR.get());
+                    : Utilities.isTransientTaskBarEnabled(mContext));
     }
 
     /**

@@ -124,6 +124,10 @@
     <string name="background_blur_title">Background blur depth</string>
     <string name="background_blur_summary">Set blur depth level for recents and app drawer</string>
 
+    <!-- Taskbar -->
+    <string name="pref_transient_taskbar_title">Transient Taskbar</string>
+    <string name="pref_transient_taskbar_summary">Use new transient taskbar style</string>
+
     <!-- Recents icons -->
     <string name="recents_screenshot_title">Screenshot</string>
     <string name="recents_clear_all_title">Clear all</string>
